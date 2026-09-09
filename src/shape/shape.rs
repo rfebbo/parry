@@ -64,8 +64,13 @@ pub enum ShapeType {
     #[cfg(feature = "dim3")]
     /// A cone shape.
     Cone,
-    // /// A custom shape type.
-    // Custom(u8),
+    #[cfg(feature = "dim3")]
+    /// A convex 2D profile extruded along Y — see [`crate::shape::ExtrudedProfile`].
+    ///
+    /// FORK ADDITION. Appended after the existing variants rather than inserted, so every
+    /// discriminant keeps its value (this enum is `FromPrimitive` with `Ball = 0`). Fieldless,
+    /// because the commented-out `Custom(u8)` above would make it non-C-like and break that derive.
+    ExtrudedProfile,
     /// A cuboid with rounded corners.
     RoundCuboid,
     /// A triangle with rounded corners.
