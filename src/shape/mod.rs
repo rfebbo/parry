@@ -42,7 +42,7 @@ pub use self::convex_polyhedron::ConvexPolyhedron;
 #[cfg(feature = "dim3")]
 pub use self::cylinder::Cylinder;
 #[cfg(feature = "dim3")]
-pub use self::extruded_profile::ExtrudedProfile;
+pub use self::extruded_profile::{ExtrudedProfile, ProfileArc};
 #[cfg(feature = "dim3")]
 #[cfg(feature = "alloc")]
 pub use self::heightfield3::*;
