@@ -957,18 +957,31 @@ impl PolygonalFeatureMap for ConvexPolyhedron {
 
         let face = &self.faces[best_fid];
         let i1 = face.first_vertex_or_edge;
-        // TODO: if there are more than 4 vertices, we need to select four vertices that maximize the area.
-        let num_vertices = face.num_vertices_or_edges.min(4);
-        let i2 = i1 + num_vertices;
+        let total = face.num_vertices_or_edges;
+        let num_vertices = total.min(4);
+        let i2 = i1 + total;
 
-        for (i, (vid, eid)) in self.vertices_adj_to_face[i1 as usize..i2 as usize]
-            .iter()
-            .zip(self.edges_adj_to_face[i1 as usize..i2 as usize].iter())
-            .enumerate()
-        {
-            out_feature.vertices[i] = self.points[*vid as usize];
-            out_feature.vids[i] = PackedFeatureId::vertex(*vid);
-            out_feature.eids[i] = PackedFeatureId::edge(*eid);
+        // FORK PATCH. Upstream takes the first four vertices in winding order, with a TODO
+        // saying it ought to take the four that maximise area. On a face with many vertices
+        // those four are *consecutive*: on the 16-vertex end cap of an extruded 16-gon they span
+        // 3/16 of the circle, so the contact manifold is built from a sliver off to one side of the
+        // real contact patch — an off-centre patch that applies a spurious torque.
+        //
+        // This walks the face's vertices at an even stride instead, which for a convex face gives a
+        // quad spanning the whole face — the inscribed quadrilateral of maximum area for a regular
+        // polygon, and a good approximation for an irregular one. Same cost, same winding, and
+        // identical behaviour for faces of four or fewer vertices, where the stride is 1.
+        let stride = (total / num_vertices.max(1)).max(1);
+        let verts = &self.vertices_adj_to_face[i1 as usize..i2 as usize];
+        let edges = &self.edges_adj_to_face[i1 as usize..i2 as usize];
+
+        for i in 0..num_vertices as usize {
+            let k = (i as u32 * stride) as usize;
+            let vid = verts[k];
+            let eid = edges[k];
+            out_feature.vertices[i] = self.points[vid as usize];
+            out_feature.vids[i] = PackedFeatureId::vertex(vid);
+            out_feature.eids[i] = PackedFeatureId::edge(eid);
         }
 
         out_feature.fid = PackedFeatureId::face(best_fid as u32);
